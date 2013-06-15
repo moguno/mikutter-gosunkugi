@@ -19,12 +19,25 @@ Plugin.create :gosunkugi do
     settings "自動ピン留め" do
       boolean("URLを開いたとき", :gosunkugi_auto_openurl)
     end
+
+    settings "カスタムスタイル" do
+      boolean("カスタムスタイルを使う", :gosunkugi_custom_style)
+      fontcolor("フォント", :gosunkugi_font_face, :gosunkugi_font_color)
+      color("背景色", :gosunkugi_background_color)
+    end
   end
 
+  on_boot { |service|
+    UserConfig[:gosunkugi_auto_openurl] ||= false
+    UserConfig[:gosunkugi_custom_style] ||= false
+    UserConfig[:gosunkugi_font_color] ||= [0, 0, 0]
+    UserConfig[:gosunkugi_background_color] ||= [220 * 256, 220 * 256, 180 * 256]
+  }
 
   command(:pin,
           name: 'ピン留めする',
           condition: Plugin::Command[:HasOneMessage] & lambda{ |opt| opt.messages.first[:pinned] == nil },
+          icon: File.dirname(__FILE__) + "/a20-8.png",
           visible: true,
           role: :timeline) { |opt|
     opt.messages.each { |m| pin(m, true) }
@@ -33,9 +46,35 @@ Plugin.create :gosunkugi do
   command(:unpin,
           name: 'ピン留めを外す',
           condition: Plugin::Command[:HasOneMessage] & lambda{ |opt| opt.messages.first[:pinned] != nil },
+          icon: File.dirname(__FILE__) + "/a20-8.png",
           visible: true,
           role: :timeline) { |opt|
     opt.messages.each { |m| pin(m, false) }
+  }
+
+
+  filter_message_background_color { |message, color|
+    if UserConfig[:gosunkugi_custom_style] && message.message[:pinned] then
+      color = UserConfig[:gosunkugi_background_color]
+    end
+
+    [message, color]
+  }
+
+  filter_message_font_color { |message, color|
+    if UserConfig[:gosunkugi_custom_style] && message.message[:pinned] then
+      color = UserConfig[:gosunkugi_font_color]
+    end
+
+    [message, color]
+  }
+
+  filter_message_font { |message, font|
+    if UserConfig[:gosunkugi_custom_style] && message.message[:pinned] then
+      font = UserConfig[:gosunkugi_font_face]
+    end
+
+    [message, font]
   }
 
 

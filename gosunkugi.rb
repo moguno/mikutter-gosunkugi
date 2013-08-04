@@ -85,7 +85,7 @@ Plugin.create :gosunkugi do
 
       rule[:callback] = lambda { |segment| 
         UserConfig[:gosunkugi_auto_openurl] ||= false
-        if UserConfig[:gosunkugi_auto_openurl] then
+        if UserConfig[:gosunkugi_auto_openurl] && segment[:message] then
           pin(segment[:message], true)
         end
 

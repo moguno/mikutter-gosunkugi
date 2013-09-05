@@ -1,12 +1,43 @@
 # -*- coding: utf-8 -*-
 
+class Message
+  alias retweet_org retweet
+  alias favorite_org favorite
+
+  def retweet
+    if retweetable?
+      Plugin.call(:do_retweet, self)
+      self.service.retweet(self){|*a| yield *a if block_given? } if self.service end end
+
+  def favorite(fav = true)
+    if favoritable?
+      Plugin.call(:do_favorite, self)
+      self.service.favorite(self, fav) end end
+end
+
 Plugin.create :gosunkugi do 
+  on_do_favorite { |msg|
+    if UserConfig[:gosunkugi_auto_unpin_favorite]
+      if msg[:pinned]
+        pin(msg, false)
+      end
+    end
+  }
+
+  on_do_retweet { |msg|
+    if UserConfig[:gosunkugi_auto_unpin_retweet]
+      if msg[:pinned]
+        pin(msg, false)
+      end
+    end
+  }
+
   def pin(msg, pinning)
     if pinning then
       msg[:modified] = Time.new + 1000000
       msg[:pinned] = "pinned"
 
-      if UserConfig[:gosunkugi_auto_unpin]
+      if UserConfig[:gosunkugi_auto_unpin_time]
         Reserver.new(UserConfig[:gosunkugi_auto_unpin_sec]) {
           pin(msg, false)
 	}
@@ -27,8 +58,10 @@ Plugin.create :gosunkugi do
     end
 
     settings "自動ピン留め解除" do
-      boolean("一定時間が経過したとき", :gosunkugi_auto_unpin)
+      boolean("一定時間が経過したとき", :gosunkugi_auto_unpin_time)
       adjustment("　一定時間（秒）", :gosunkugi_auto_unpin_sec, 1, 10000000)
+      boolean("リツイートしたとき", :gosunkugi_auto_unpin_retweet)
+      boolean("ふぁぼふぁぼしたとき", :gosunkugi_auto_unpin_favorite)
     end
 
     settings "カスタムスタイル" do
@@ -40,7 +73,9 @@ Plugin.create :gosunkugi do
 
   on_boot { |service|
     UserConfig[:gosunkugi_auto_openurl] ||= false
-    UserConfig[:gosunkugi_auto_unpin] ||= false
+    UserConfig[:gosunkugi_auto_unpin_time] ||= false
+    UserConfig[:gosunkugi_auto_unpin_retweet] ||= false
+    UserConfig[:gosunkugi_auto_unpin_favorite] ||= false
     UserConfig[:gosunkugi_auto_unpin_sec] ||= 300
     UserConfig[:gosunkugi_custom_style] ||= false
     UserConfig[:gosunkugi_font_color] ||= [0, 0, 0]

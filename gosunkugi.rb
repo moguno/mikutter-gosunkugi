@@ -5,6 +5,12 @@ Plugin.create :gosunkugi do
     if pinning then
       msg[:modified] = Time.new + 1000000
       msg[:pinned] = "pinned"
+
+      if UserConfig[:gosunkugi_auto_unpin]
+        Reserver.new(UserConfig[:gosunkugi_auto_unpin_sec]) {
+          pin(msg, false)
+	}
+      end
     else
       msg[:modified] = Time.new
       msg[:pinned] = nil
@@ -20,6 +26,11 @@ Plugin.create :gosunkugi do
       boolean("URLを開いたとき", :gosunkugi_auto_openurl)
     end
 
+    settings "自動ピン留め解除" do
+      boolean("一定時間が経過したとき", :gosunkugi_auto_unpin)
+      adjustment("　一定時間（秒）", :gosunkugi_auto_unpin_sec, 1, 10000000)
+    end
+
     settings "カスタムスタイル" do
       boolean("カスタムスタイルを使う", :gosunkugi_custom_style)
       fontcolor("フォント", :gosunkugi_font_face, :gosunkugi_font_color)
@@ -29,6 +40,8 @@ Plugin.create :gosunkugi do
 
   on_boot { |service|
     UserConfig[:gosunkugi_auto_openurl] ||= false
+    UserConfig[:gosunkugi_auto_unpin] ||= false
+    UserConfig[:gosunkugi_auto_unpin_sec] ||= 300
     UserConfig[:gosunkugi_custom_style] ||= false
     UserConfig[:gosunkugi_font_color] ||= [0, 0, 0]
     UserConfig[:gosunkugi_background_color] ||= [220 * 256, 220 * 256, 180 * 256]

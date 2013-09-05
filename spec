@@ -5,7 +5,7 @@ depends:
   plugin:
   - settings
   - command
-version: '1.0'
+version: 0.1.1
 author: moguno
 name: ピン留め
 description: 気になる呟きをTL上部に「ピン留め」します。
